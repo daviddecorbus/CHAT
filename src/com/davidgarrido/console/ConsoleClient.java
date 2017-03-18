@@ -9,6 +9,8 @@ import java.util.Scanner;
 
 import com.davidgarrido.conexion.Conexion;
 import com.davidgarrido.conexion.Consulta;
+import com.davidgarrido.server.ConexionCliente;
+import com.davidgarrido.server.MensajesChat;
 import com.davidgarrido.server.ServidorChat;
 import com.davidgarrido.client.ConexionServidor;
 
@@ -38,7 +40,14 @@ public class ConsoleClient {
             //log.error("Error al intentar enviar un mensaje: " + ex.getMessage());
         }
 	}
-	
+	public void send(String text,String texto){
+		try {
+			
+            salidaDatos.writeUTF(texto+"/"+getNick().toUpperCase() +": "+ text);
+        } catch (IOException ex) {
+            //log.error("Error al intentar enviar un mensaje: " + ex.getMessage());
+        }
+	}
 	public Socket getSocket() {
 		return socket;
 	}
@@ -64,6 +73,7 @@ public class ConsoleClient {
 	}
 
 	public static void main(String args[]){
+		String sala="salaPrincipal";
 		Consulta consulta = new Consulta(new Conexion("chat","root"," "));
 		ConsoleClient client = new ConsoleClient();
 		Scanner teclado = new Scanner(System.in);
@@ -71,8 +81,8 @@ public class ConsoleClient {
 		System.out.println("Indica tu nick:");
 		texto = teclado.nextLine();
 		client.setNick(texto);	
-		new ReceiveMessages(client.socket,client.getNick()).start();
-		
+		ReceiveMessages recieveMessages=new ReceiveMessages(client.socket,client.getNick(),sala);
+		recieveMessages.start();
 		
 		
 		if (consulta.revisarUsuario(texto)) {
@@ -86,6 +96,7 @@ public class ConsoleClient {
 		while (chatActivo){
 			
 			texto = teclado.nextLine();
+			
 				switch (texto) {
 				case "USUARIOS_R":	
 					consulta.mostrarUsuarios();
@@ -123,9 +134,17 @@ public class ConsoleClient {
 					client.send(client.getNick()+" ha dejado el chat para siempre");
 					chatActivo=false;
 					break;
-		
+				case "NEWROOM":
+					System.out.println("Introduce el nombre de la sala");
+					sala = teclado.nextLine();
+					recieveMessages.setSala(sala);
+					System.out.println("Introduce el mensaje");
+					texto = teclado.nextLine();
+					client.send(texto,sala);
+					break;
 				default:
-					client.send(texto);
+					client.send(texto,sala);
+				
 					break;
 				}
 		
