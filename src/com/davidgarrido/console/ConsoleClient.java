@@ -19,6 +19,7 @@ public class ConsoleClient {
 	private Socket socket;
 	private  DataOutputStream salidaDatos;
 	public String nick = null;
+	public static boolean logout=false;
 	public ConsoleClient(){
 		// Se crea el socket para conectar con el Sevidor del Chat
         try {
@@ -40,10 +41,15 @@ public class ConsoleClient {
             //log.error("Error al intentar enviar un mensaje: " + ex.getMessage());
         }
 	}
-	public void send(String text,String texto){
+	public void send(String text,String sala){
 		try {
+			if(logout==true){
+				salidaDatos.writeUTF(sala+"/"+getNick().toUpperCase()+ text);
+				logout=false;
+			}else{
 			
-            salidaDatos.writeUTF(texto+"/"+getNick().toUpperCase() +": "+ text);
+            salidaDatos.writeUTF(sala+"/"+getNick().toUpperCase() +": "+ text);
+			}
         } catch (IOException ex) {
             //log.error("Error al intentar enviar un mensaje: " + ex.getMessage());
         }
@@ -117,9 +123,10 @@ public class ConsoleClient {
 				case "SYSTEM":
 	
 					break;		
-				case "LOGOUT_A":		
+				case "LOGOUT_A":
+					logout=true;
 					consulta.clienteOffline(client.getNick());
-					client.send(client.getNick()+" ha dejado el chat");
+					client.send(" ha dejado el chat",sala);
 					try {
 						client.getSocket().close();
 					} catch (IOException e) {
@@ -128,19 +135,18 @@ public class ConsoleClient {
 					}
 					chatActivo=false;
 					break;		
-				case "LOGOUT_R":		
+				case "LOGOUT_R":
+					logout=true;
 					consulta.clienteOffline(client.getNick());
 					consulta.borrarUsuario(client.getNick());
-					client.send(client.getNick()+" ha dejado el chat para siempre");
+					client.send(" ha dejado el chat para siempre",sala);
 					chatActivo=false;
 					break;
 				case "NEWROOM":
 					System.out.println("Introduce el nombre de la sala");
 					sala = teclado.nextLine();
 					recieveMessages.setSala(sala);
-					System.out.println("Introduce el mensaje");
-					texto = teclado.nextLine();
-					client.send(texto,sala);
+					System.out.println("Has entrado en la sala: "+sala);
 					break;
 				default:
 					client.send(texto,sala);
